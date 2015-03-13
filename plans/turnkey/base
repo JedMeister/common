@@ -6,17 +6,23 @@ wget
 curl
 rsync
 
+#ifndef CHROOT_ONLY
 di-live
+lvm2            /* di-live recommends */
+eject           /* di-live recommends */
+#endif
+
 whiptail        /* di-live recommends */
 console-tools   /* di-live recommends */
-lvm2            /* di-live recommends */
 file            /* di-live recommends */
-eject           /* di-live recommends */
 
 confconsole
 console-tools   /* confconsole recommends */
-di-live         /* confconsole recommends */
 resolvconf      /* confconsole recommends */
+
+#ifndef CHROOT_ONLY
+di-live         /* confconsole recommends */
+#endif
 
 tklbam
 hubdns
@@ -52,7 +58,9 @@ webmin-shell
 webmin-custom
 webmin-file
 webmin-text-editor
+#ifndef CHROOT_ONLY
 webmin-lvm
+#endif
 webmin-tklbam
 webmin-updown
 unzip           /* webmin-updown recommends */
