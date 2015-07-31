@@ -14,10 +14,12 @@ eject           /* di-live recommends */
 
 whiptail        /* di-live recommends */
 console-tools   /* di-live recommends */
+kbd             /* di-live recommends */
 file            /* di-live recommends */
 
 confconsole
 console-tools   /* confconsole recommends */
+kbd             /* confconsole recommends */
 resolvconf      /* confconsole recommends */
 
 #ifndef CHROOT_ONLY
@@ -44,9 +46,10 @@ man-db
 screen
 nano
 ntp
+ncurses-term    /* support additional $TERM values */
 
 shellinabox
-openssl         /* shellinabox recommends */
+stunnel4        /* provide ssl to shellinabox */
 
 webmin
 webmin-theme-stressfree
@@ -74,6 +77,10 @@ webmin-firewall
 
 ssh
 webmin-sshd
+
+bsd-mailx
+postfix
+webmin-postfix
 
 #ifndef CHROOT_ONLY
 acpi-support-base
