@@ -1,5 +1,50 @@
-#!/bin/sh -e
-# un-initialize etckeeper
+#!/bin/bash -e
+
+# Hack to install etckeeper without python2 (not really a hard depends)
+# See https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=921447
+#
+# Note that any future etckeeper updates will (re)install python2; so this
+# only reduces the size until the next update of etckeeper
+
+
+# Download pkg from Debian and unpack
+tmp_dir=etckeeper.tmp
+mkdir $tmp_dir
+apt-get update -qq || true
+apt-get download etckeeper -y
+dpkg-deb -R etckeeper_*.deb $tmp_dir
+
+# process the control file to find the relevant part that needs tweaking
+line=$(grep -n "^Depends:" $tmp_dir/DEBIAN/control)
+line_no=$(echo "$line" | cut -d: -f1)
+line=$(echo $line | cut -d: -f2-)
+# match py2 dep to remove
+py2_dep1=$(echo $line | sed "s|^.*\(python[^,]*[<][^,]*2[^,]*,* \).*$|\1|")
+# match py2 dep and to bump to py3
+py2_dep2=$(echo $line | sed "s|^.*\(python[^,]*[>=][^,]*2.[0-9][^,]*,*\)|\1|")
+py3_dep=$(echo $py2_dep2 | sed "s|python:|python3:|;s|2.7.*)|3.5~)|")
+
+# Update python2 dependency to python3
+# This may be a bit fragile, so test length and fail loudly if too long
+# currently these 2 deps are 21 & 24 chars respecively in buster
+if [[ ${#py2_dep1} -lt 23 ]] && [[ ${#py2_dep2} -lt 26 ]]; then
+    # remove dependency on 'python:any (<< 2.8)'
+    sed -i "${line_no}s|${py2_dep1}||" $tmp_dir/DEBIAN/control
+    # modify dependency on '>= 2.7~' to be '>= 3.5~'
+    sed -i "${line_no}s|${py2_dep2}|${py3_dep}|" $tmp_dir/DEBIAN/control
+else
+    echo "[FATAL] $(basename $0) Failed to patch etckeeper dpkg status"
+    exit 1
+fi
+
+# Repack, install and cleanup
+dpkg-deb -b $tmp_dir etckeeper_fixed.deb
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    -o DPkg::Options::=--force-confdef -o DPkg::Options::=--force-confold \
+    ./etckeeper_fixed.deb
+rm -r etckeeper*
+
+# un-initialize etckeeper (not related to above hack)
 
 echo "inithooks.conf" >> /etc/.gitignore
 etckeeper uninit -f
