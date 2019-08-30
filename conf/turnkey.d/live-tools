@@ -1,0 +1,8 @@
+#!/bin/bash -e
+
+# Mask live-tools.service as it conflicts with di-live.service and for Buster
+# di-live.service achieves our ends (rather than hacking on live-tools.service)
+#
+# We should review this in Bullseye
+
+systemctl mask live-tools.service
