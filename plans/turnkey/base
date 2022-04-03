@@ -1,6 +1,9 @@
 #include <boot>
 #include <net>
 #include <console>
+#ifdef RPI
+#include <wifi>
+#endif
 
 wget
 curl
@@ -9,9 +12,10 @@ zstd                    /* if installed will be used to compress initramfs */
 
 turnkey-keys            /* TKL keys packaged for v19.x */
 
-// Grub packages
+// Grub packages:
 // * 'grub-pc' is required for legacy BIOS boot install
 // * 'grub-efi-amd64' is required for UEFI boot install
+// * 'grub-efi-arm64' is required for ARM UEFI boot install
 // These grub packages conflict with one another but neither need be installed
 // within the live rootfs/squashfs - but are required for 'grub-install'.
 // We install grub-pc & ship grub-efi-amd64 deb (and deps) in the ISO.
@@ -24,6 +28,9 @@ efivar                  /* installer depends - ISO UEFI boot */
 lvm2                    /* installer recommends */
 file                    /* installer recommends */
 eject                   /* installer recommends */
+#ifndef ARM64
+tkl-installer
+#endif
 
 confconsole
 kbd                     /* confconsole recommends */
