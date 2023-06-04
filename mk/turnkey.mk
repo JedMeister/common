@@ -11,6 +11,8 @@ CONF_VARS += CREDIT_STYLE CREDIT_STYLE_EXTRA CREDIT_ANCHORTEXT CREDIT_LOCATION
 CONF_VARS += GITHUB_USER GITHUB_USER_TOKEN
 # for dynamically adding pins to sury & backports respectively
 CONF_VARS += PHP_EXTRA_PINS BACKPORTS_PINS
+# for adding docker support
+CONF_VARS += DOCKER
 
 COMMON_OVERLAYS := turnkey.d $(COMMON_OVERLAYS)
 COMMON_CONF := turnkey.d $(COMMON_CONF)
@@ -34,8 +36,19 @@ define _bootstrap/post
 	# temporarily allow cert to not exist
 	cp /usr/local/share/ca-certificates/squid_proxyCA.crt $O/bootstrap/usr/local/share/ca-certificates/ || true;
 	fab-chroot $O/bootstrap --script $(COMMON_CONF_PATH)/bootstrap_apt;
+	if [ -n "$(DOCKER)" ]; then \
+		fab-chroot $O/bootstrap --script $(COMMON_CONF_PATH)/docker; \
+	fi
 endef
 bootstrap/post += $(_bootstrap/post)
+
+define _root.patched/pre
+
+	if [ -n "$(DOCKER)" ]; then \
+		mount --bind /run $O/root.patched/run; \
+	fi
+endef
+root.patched/pre += $(_root.patched/pre)
 
 # tag package management system with release package
 # set /etc/turnkey_version and apt user-agent
@@ -61,6 +74,9 @@ define _root.patched/post
 	fab-chroot $O/root.patched "dpkg -i *.deb && rm *.deb && rm -f /var/log/dpkg.log"
 
 	fab-chroot $O/root.patched "which postsuper >/dev/null && postsuper -d ALL || true"
+	if [ -n "$(DOCKER)" ]; then \
+		umount $O/root.patched/run; \
+	fi
 endef
 root.patched/post += $(_root.patched/post)
 

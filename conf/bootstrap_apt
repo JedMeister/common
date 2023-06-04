@@ -14,6 +14,9 @@
 #       - set to desired PHP version from Sury PHP repo
 #   - PHP_EXTRA_PINS <optional>:
 #       - space separated list of additional Sury php pkgs to pin 500
+#   - DOCKER <optional>:
+#       - set to prepare docker apt repo in bootstrap and enable docker
+#         support in root.patched
 #   - APT_PROXY_OVERRIDE <optional>:
 #       - override proxy default proxy; use one of:
 #           - full remote url (starting with 'http/s')
@@ -138,13 +141,13 @@ if [[ -n "$NO_TURNKEY_APT_REPO" ]]; then
     find $SOURCES_LIST -type f -exec sed -i '/archive.turnkeylinux.org/ s/^/#/g' {} \;
 fi
 
-if [ -n "$PHP_VERSION" ]; then
-    # Use 3rd party sury.org repo
-    # install support for https repo & wget (to download gpg key)
+if [ -n "$PHP_VERSION" ] || [ -n "$DOCKER" ]; then
+    # ensure support for https repo & wget (to download gpg key)
     PKGS="lsb-release ca-certificates wget"
     apt-get update --allow-releaseinfo-change
     DEBIAN_FRONTEND=noninteractive apt-get install -y $PKGS
-
+fi
+if [ -n "$PHP_VERSION" ]; then
     # download keyfile
     keyfile=/usr/share/keyrings/php-sury.org.gpg
     wget -O $keyfile https://packages.sury.org/php/apt.gpg
