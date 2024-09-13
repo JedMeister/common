@@ -1,31 +1,71 @@
+#!/bin/bash -e
+# NOTE: this file is intended to be sourced; not executed
+# shebang is for shellcheck linting
+
 #export GIT_AUTHOR_NAME="Your Name"
 #export GIT_AUTHOR_EMAIL="your@email.com"
 #export GIT_COMMITTER_NAME=$GIT_AUTHOR_NAME
 #export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 
-[ -d /usr/lib/git-core ] && export PATH=/usr/lib/git-core:$PATH
+[[ -d /usr/lib/git-core ]] && export PATH=/usr/lib/git-core:$PATH
 
 git_branch_bin=$(which git-branch 2>/dev/null)
-function git-branch()
-{
+git-branch() {
     local delete=no
     for arg; do
-        [ "$arg" == "-D" ] && delete=yes
+        if [[ "$arg" == "-D" ]] \
+                || [[ "$arg" == "--delete" ]] \
+                || [[ "$arg" == "-d" ]]; then
+            delete=yes
+        fi
     done
-    if [ "$delete" == "yes" ]; then
-        $git_branch_bin -v $*
+    if [[ "$delete" == "yes" ]]; then
+        $git_branch_bin "$@"
     else
-        $git_branch_bin -v -a $*
+        $git_branch_bin --verbose --all "$@"
     fi
 }
 
-# useful aliases
-alias gs="git-status"
-alias gd="git-diff"
+## useful aliases
+
+# add
 alias ga="git-add"
+
+# branch
 alias gb="git-branch"
+alias gbd="git-branch -d"
+
+# commit
 alias gc="git-commit"
-alias gca="git-commit -v -a"
-alias gcam="git-commit --amend -v"
+alias gca="git-commit --all --verbose"
+alias gcA="git-commit --all --amend --verbose"
+
+# checkout
+alias gch="git-checkout"
+alias gchb="git-checkout --branch"
+
+# diff
+alias gd="git-diff"
+alias gdn="git-diff --names-only"
+
+# grep
+alias gg="git grep"
+alias ggl="git grep --files-with-matches"
+
+# log
 alias gl="git-log"
 alias gll="git-log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+alias glo="git-log --oneline"
+
+# push
+alias gp="git-push"
+
+# remote
+alias gr="git-remote --verbose"
+alias gra="git-remote add"
+
+# status
+alias gs="git-status"
+alias gss="git-status --short" # just show files that have changed
+alias gsst="git-status --show-stash"
+alias gsv="git-status --verbose" # include staged files
