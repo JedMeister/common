@@ -9,7 +9,8 @@ choose_php_version() {
     echo "4) PHP 8.1"
     echo "5) PHP 8.2"
     echo "6) PHP 8.3"
-    read -r -p "Enter choice [1-6]: " php_choice
+    echo "7) PHP 8.4"
+    read -r -p "Enter choice [1-7]: " php_choice
 
     case $php_choice in
         1) PHPV_NEW="7.3";;
@@ -18,6 +19,7 @@ choose_php_version() {
         4) PHPV_NEW="8.1";;
         5) PHPV_NEW="8.2";;
         6) PHPV_NEW="8.3";;
+        7) PHPV_NEW="8.4";;
         *) echo "Invalid choice. Exiting."; exit 1;;
     esac
 }
