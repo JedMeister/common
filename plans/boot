@@ -34,6 +34,9 @@ linux-image-686-pae
 #ifdef AMD64
 linux-image-amd64
 #endif
+#ifdef ARM64
+linux-image-arm64
+#endif
 #endif
 #endif
 
