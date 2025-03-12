@@ -18,3 +18,7 @@
 
 # rm gh_releases
 /usr/local/bin/gh_releases
+
+# rm tmp contents
+~/tmp/*
+~/tmp/.*
