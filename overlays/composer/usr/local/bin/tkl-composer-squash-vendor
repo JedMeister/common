@@ -48,8 +48,8 @@ shallow_clone() {
 cleanup() {
     readarray -d '' vendor_dirs < <(find /var/www -type d -name vendor)
     # only include first match and strip leading and trailing white space
-    vendor_dir=$(\
-        sed -En "s|^[[:space:]]*(.*)[[:space:]]*|\1|p" <<<"${vendor_dirs[0]}")
+    vendor_dir="$(\
+        sed -En "s|^[[:space:]]*(.*)[[:space:]]*|\1|p" <<<"${vendor_dirs[0]}")"
     if ! [[ -d "${vendor_dir}" ]]; then
         fatal "No vendor directory found in /var/www"
     fi
@@ -59,7 +59,7 @@ cleanup() {
     readarray -d '' git_dirs < <(find "$vendor_dir" -type d -name ".git" -print0)
     for git_dir in "${git_dirs[@]}"; do
         chown -R root:root "$git_dir"
-        src_dir=$(dirname "${git_dir}")
+        src_dir="$(dirname "${git_dir}")"
         shallow_clone "$src_dir"
         chown -R www-data:www-data "$git_dir"
         count=$((count+1))
