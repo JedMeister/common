@@ -1,9 +1,11 @@
-#/bin/bash -ex
+#!/bin/bash -e
+
+[[ -z "${DEBUG:-}" ]] || set -x
 
 usage() {
     echo "$@"
     cat <<EOF
-$(basname $0) [-h|--help]
+$(basename "$0") [-h|--help]
 
 Options:
 
@@ -23,39 +25,48 @@ EOF
     exit 1
 }
 
-info() { echo "[INFO]: $@"; }
-fatal() { echo "[FATAL]: $@"; exit 1; }
+info() { echo "[INFO]: $*"; }
+fatal() { echo "[FATAL]: $*" >&2; exit 1; }
 
 shallow_clone() {
-    repo=$1
-    mv ${repo} ${repo}.bak
-    git clone --depth 1 file:///${repo}.bak ${repo} >/dev/null 2>&1
-    cp ${repo}.bak/.git/config ${repo}/.git/config
-    orig_log=$(git --git-dir=${repo}.bak/.git log --pretty=oneline -1)
-    new_log=$(git --git-dir=${repo}/.git log --pretty=oneline -1)
-    if [[ "$new_log" != "$orig_log" ]]; then
-        rm -rf ${repo}
-        mv ${repo}.bak ${repo}
+    local repo="$1"
+    mv "${repo}" "${repo}.bak"
+    git clone --depth 1 file:///"${repo}.bak" "${repo}" >/dev/null 2>&1
+    cp "${repo}.bak/.git/config" "${repo}/.git/config"
+    orig_head_id=$(git --git-dir="${repo}.bak/.git" rev-parse HEAD)
+    new_head_id=$(git --git-dir="${repo}/.git" rev-parse HEAD)
+    if [[ "$new_head_id" != "$orig_head_id" ]]; then
+        rm -rf "${repo}"
+        mv "${repo}.bak" "${repo}"
         fatal "Updated ${repo} HEAD did not match original. Backup restored."
     else
         info "${repo} made shallow; cleaning up temporary backup files."
-        rm -rf ${repo}.bak
+        rm -rf "${repo}.bak"
     fi
 }
 
 cleanup() {
-    vendor_dirs=/var/www/*/vendor
-    vendor_dir=$(echo ${vendor_dirs[0]}) # only include first glob match verbatim
-    if ! [[ -d ${vendor_dir} ]]; then
-        fatal "No vendor directory found (looked for '/var/www/*/vendor')"
+    readarray -d '' vendor_dirs < <(find /var/www -type d -name vendor)
+    # only include first match and strip leading and trailing white space
+    vendor_dir="$(\
+        sed -En "s|^[[:space:]]*(.*)[[:space:]]*|\1|p" <<<"${vendor_dirs[0]}")"
+    if ! [[ -d "${vendor_dir}" ]]; then
+        fatal "No vendor directory found in /var/www"
     fi
     echo "Vendor dir size prior to cleanup:"
-    du -h -s ${vendor_dir}
-    for git_dir in $(find ${vendor_dir} -type d -name '.git'); do
-        shallow_clone $(dirname ${git_dir})
+    du -h -s "${vendor_dir}"
+    count=0
+    readarray -d '' git_dirs < <(find "$vendor_dir" -type d -name ".git" -print0)
+    for git_dir in "${git_dirs[@]}"; do
+        chown -R root:root "$git_dir"
+        src_dir="$(dirname "${git_dir}")"
+        shallow_clone "$src_dir"
+        chown -R www-data:www-data "$git_dir"
+        count=$((count+1))
     done
+    echo "Cleaned $count repos"
     echo "Vendor dir size post cleanup:"
-    du -h -s ${vendor_dir}
+    du -h -s "${vendor_dir}"
 }
 
 if [[ $# -gt 0 ]]; then
