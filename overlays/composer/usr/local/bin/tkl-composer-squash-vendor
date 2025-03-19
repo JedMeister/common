@@ -46,10 +46,7 @@ shallow_clone() {
 }
 
 cleanup() {
-    readarray -d '' vendor_dirs < <(find /var/www -type d -name vendor)
-    # only include first match and strip leading and trailing white space
-    vendor_dir="$(\
-        sed -En "s|^[[:space:]]*(.*)[[:space:]]*|\1|p" <<<"${vendor_dirs[0]}")"
+    vendor_dir="$(find /var/www -type d -name vendor | head -n 1)"
     if ! [[ -d "${vendor_dir}" ]]; then
         fatal "No vendor directory found in /var/www"
     fi
