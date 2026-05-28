@@ -1,14 +1,6 @@
 #include <turnkey/mysql>
-
-lighttpd
-lighttpd-mod-openssl
+#include <turnkey/lighttpd>
+#include <turnkey/php-fpm>
+#include <turnkey/adminer>
 
 php-fpm
-php-gd
-php-cli
-php-curl
-php-mysql
-webmin-phpini
-
-adminer
-libjs-jush      /* adminer recommends */

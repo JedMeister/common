@@ -1,15 +1,10 @@
 #include <turnkey/mysql>
+#include <turnkey/nginx>
+#include <turnkey/php-fpm>
+#include <turnkey/adminer>
 
 nginx
 libnginx-mod-http-modsecurity
 webmin-nginx
 
-php-fpm
-php-gd
-php-cli
-php-curl
 php-mysql
-webmin-phpini
-
-adminer
-libjs-jush      /* adminer recommends */
