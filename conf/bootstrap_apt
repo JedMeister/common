@@ -245,6 +245,20 @@ Components: main
 Enabled: $debian_backports_enabled
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 EOF
+    # Debian updates repo
+    # - Proposed updates approved for next upcoming stable point release
+    # - Generally not required for normal operation, but bugs and regressions
+    #   are often fixed and appear in "updates" before inclusion in "main"
+    #   - e.g. https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1142261
+    # - Note: always disabled in TurnKey - included for user convenience.
+    cat $SOURCES_LIST/debian-updates.sources <<EOF
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: $CODENAME-updates
+Components: main contrib non-free non-free-firmware
+Enabled: no
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+EOF
     # TurnKey testing repo
     cat > $SOURCES_LIST/turnkey-testing.sources <<EOF
 Types: deb
