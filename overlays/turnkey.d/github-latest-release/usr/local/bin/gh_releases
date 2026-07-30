@@ -77,12 +77,16 @@ get_all_pages() {
     declare -i page=0
     last_page="$(get_page "$url" "$key" "$page")"
 
-    while [[ -n "$last_page" ]]
+    while [[ -n "$last_page" ]] && [[ $page -lt 10 ]]
     do
         echo "$last_page" >> $tmp_dir/releases
         page+=1
         last_page="$(get_page "$url" "$key" "$page")"
     done
+
+    if [[ $last_page -eq 10 ]]; then
+        warning "some releases may of been truncated from gh_releases output"
+    fi
 }
 
 [[ -z $NO_RELEASES ]] && get_all_pages "https://api.github.com/repos/${repo_path}/releases" "tag_name"
