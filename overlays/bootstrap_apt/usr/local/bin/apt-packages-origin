@@ -52,7 +52,10 @@ def parse_policies(fh):
     yield pp
 
 def main():
-    proc = subprocess.Popen(args="apt-cache policy $(dpkg -l | grep ^ii | awk '{print $2}')", shell=True, bufsize=1, stdout=subprocess.PIPE)
+    dpkg_proc = subprocess.Popen(['dpkg', '-l'], stdout=subprocess.PIPE)
+    pkgs = [line.split()[1] for line in dpkg_proc.stdout if line.startswith('ii')]
+    dpkg_proc.wait()
+    proc = subprocess.Popen(['apt-cache', 'policy'] + pkgs, bufsize=1, stdout=subprocess.PIPE)
 
     rows = []
     for pp in parse_policies(proc.stdout):
