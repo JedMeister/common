@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Author: Liraz Siri <liraz@turnkeylinux.org>
 # list origin of packages
 
@@ -52,10 +52,13 @@ def parse_policies(fh):
     yield pp
 
 def main():
-    dpkg_proc = subprocess.Popen(['dpkg', '-l'], stdout=subprocess.PIPE)
+    dpkg_proc = subprocess.Popen(['dpkg', '-l'], stdout=subprocess.PIPE, text=True)
     pkgs = [line.split()[1] for line in dpkg_proc.stdout if line.startswith('ii')]
     dpkg_proc.wait()
-    proc = subprocess.Popen(['apt-cache', 'policy'] + pkgs, bufsize=1, stdout=subprocess.PIPE)
+    if dpkg_proc.returncode != 0:
+        raise SystemExit('dpkg -l failed with returncode %d' % dpkg_proc.returncode)
+    # if pkgs is empty, apt-cache policy runs with no args and lists policy for all packages
+    proc = subprocess.Popen(['apt-cache', 'policy'] + pkgs, bufsize=1, stdout=subprocess.PIPE, text=True)
 
     rows = []
     for pp in parse_policies(proc.stdout):
@@ -75,7 +78,7 @@ def main():
 
     fmt = "%%-%ds  %%-%ds  %%s" % (maxcols[0], maxcols[1])
     for row in rows:
-        print fmt % tuple(row)
+        print(fmt % tuple(row))
 
 if __name__ == "__main__":
     main()
