@@ -1,3 +1,27 @@
+turnkey-fileserver-19.0 (1) turnkey; urgency=low
+
+  * Fix firewall port conf: appended FTP port (21) was discarded by the port
+    assignment in fileserver.mk; use += so it survives.
+
+  * Reload smbd instead of the non-existent 'samba' service in the
+    samba-sudoadmin firstboot hook.
+
+  * smb.conf: drop deprecated 'socket options' and the no-op 'os level'.
+
+  * Drop WINS support & document network discovery (wsdd + avahi) and how to
+    re-enable WINS if required in the new  /etc/samba/README-discovery.txt.
+
+  * Disable legacy NetBIOS: serve SMB on port 445 only, disable nmbd, and
+    close the NetBIOS firewall ports (139/tcp, 137-138/udp). As noted above
+    discovery is handled by wsdd and avahi.
+
+  * Stop opening unused MSRPC port 135 (only served by Samba as an AD DC).
+
+  * Disable the [cdrom] share by default (commented out and documented); it
+    only works on hardware with an optical drive and an fstab entry.
+
+ -- Jeremy Davis <jeremy@turnkeylinux.org>  Thu, 06 Aug 2026 17:30:12 +1000
+
 turnkey-fileserver-18.0 (1) turnkey; urgency=low
 
   * Add wsdd package for Windows Service for Devices - so Fileserver shows up
