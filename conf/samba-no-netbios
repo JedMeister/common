@@ -1,0 +1,7 @@
+#!/bin/sh -e
+# NetBIOS is disabled in smb.conf (disable netbios = yes), so the nmbd
+# daemon is redundant - don't run it.  Host discovery is provided by
+# wsdd + avahi.  See /etc/samba/README-discovery.txt to re-enable legacy
+# NetBIOS browsing.
+
+systemctl disable nmbd
