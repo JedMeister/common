@@ -4,4 +4,5 @@
 #include <turnkey/nfs>
 
 wsdd            /* Win client discovery via Web Service Discovery */
+wsdd-server     /* Daemon split out into separate package... */
 avahi-daemon    /* Needed for Ubuntu, Mac OSX and possibly others */
