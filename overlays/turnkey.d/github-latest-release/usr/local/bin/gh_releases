@@ -6,6 +6,7 @@ repo_path="$1" # user/repo_name
 tmp_dir=/tmp/gh_releases
 rm -rf $tmp_dir
 mkdir -p $tmp_dir
+touch $tmp_dir/releases
 
 fatal() { echo -e "\n[FATAL] $*" 1>&2; exit 1; }
 warning() { echo -e "[WARNING] $*" 1>&2; }
