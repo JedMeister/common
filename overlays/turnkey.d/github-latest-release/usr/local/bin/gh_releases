@@ -96,5 +96,5 @@ get_all_pages() {
 [[ -z $NO_TAGS ]] && get_all_pages "https://api.github.com/repos/${repo_path}/tags" "name"
 
 echo "Done!" 1>&2
-cat $tmp_dir/releases | sort --version-sort --unique
+sort --version-sort --unique $tmp_dir/releases
 [[ -n $DEBUG ]] || rm -rf $tmp_dir
