@@ -77,7 +77,7 @@ get_page() {
 get_all_pages() {
     url=$1
     key=$2
-    declare -i page=0
+    declare -i page=1
     last_page="$(get_page "$url" "$key" "$page")"
 
     while [[ -n "$last_page" ]] && [[ $page -lt 10 ]]
