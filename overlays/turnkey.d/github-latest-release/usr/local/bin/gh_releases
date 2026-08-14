@@ -42,7 +42,7 @@ auth=()
 if [[ -n $GITHUB_USER_TOKEN ]]; then
     auth=(-H "Authorization: Bearer $GITHUB_USER_TOKEN")
     if [[ -n $GITHUB_USER ]]; then
-        info "Using GitHub token for user: $GITHUB_USER"
+        echo "Using GitHub token for user: $GITHUB_USER"
     else
         warn "$GITHUB_USER is optional for gh_releases but may be used elsewhere"
     fi
