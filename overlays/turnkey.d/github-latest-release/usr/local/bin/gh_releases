@@ -87,7 +87,7 @@ get_all_pages() {
         last_page="$(get_page "$url" "$key" "$page")"
     done
 
-    if [[ $last_page -eq 10 ]]; then
+    if [[ $page -eq 10 ]]; then
         warning "some releases may of been truncated from gh_releases output"
     fi
 }
