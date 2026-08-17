@@ -84,11 +84,11 @@ get_page() {
     key=$2
     page=$3
     tmp_file=$(mktemp $tmp_dir/XXXX.tmp)
-    http_code=$(curl "${auth[@]}" -b /tmp/cookies.txt -c /tmp/cookies.txt -s \
-        "${url}?page=${page}&per_page=100" > "$tmp_file")
+    http_code=$(curl "${auth[@]}" \
+        -s "${url}?page=${page}&per_page=100" > "$tmp_file")
     if [[ $http_code != 2* ]]; then
         [[ -n $DEBUG ]] || rm -f "$tmp_file"
-        fatal "$repo_path: HTTP $http_code\n$(cat "$tmp_file")"
+        fatal "Downloading $repo_path returned: HTTP $http_code"
     fi
     grep -oP "\"$key\": \"\\K(.*)(?=\")" "$tmp_file"
     [[ -n $DEBUG ]] || rm -f "$tmp_file"
