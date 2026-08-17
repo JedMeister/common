@@ -112,8 +112,12 @@ get_all_pages() {
     fi
 }
 
-[[ -z $NO_RELEASES ]] && get_all_pages "https://api.github.com/repos/${repo_path}/releases" "tag_name"
-[[ -z $NO_TAGS ]] && get_all_pages "https://api.github.com/repos/${repo_path}/tags" "name"
+if [[ -z $NO_RELEASES ]]; then
+    get_all_pages "https://api.github.com/repos/${repo_path}/releases" "tag_name"
+fi
+if [[ -z $NO_TAGS ]]; then
+    get_all_pages "https://api.github.com/repos/${repo_path}/tags" "name"
+fi
 
 echo "Done." >&2
 sort --version-sort --unique $tmp_dir/releases
