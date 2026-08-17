@@ -64,7 +64,7 @@ if [[ -n $GITHUB_USER_TOKEN ]]; then
     if [[ -n $GITHUB_USER ]]; then
         echo "Using GitHub token for user: $GITHUB_USER"
     else
-        warn "$GITHUB_USER is optional for gh_releases but may be used elsewhere"
+        warning "$GITHUB_USER is optional for gh_releases but may be used elsewhere"
     fi
 else
     warning "GITHUB_USER_TOKEN not set. Results may be unreliable."
