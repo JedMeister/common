@@ -84,8 +84,8 @@ get_page() {
     key=$2
     page=$3
     tmp_file=$(mktemp $tmp_dir/XXXX.tmp)
-    http_code=$(curl "${auth[@]}" \
-        -s "${url}?page=${page}&per_page=100" > "$tmp_file")
+    http_code=$(curl -s -o "$tmp_file" -w "%{http_code}\n" "${auth[@]}" \
+        "${url}?page=${page}&per_page=100")
     if [[ $http_code != 2* ]]; then
         [[ -n $DEBUG ]] || rm -f "$tmp_file"
         fatal "Downloading $repo_path returned: HTTP $http_code"
