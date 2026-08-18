@@ -2,18 +2,21 @@
 
 [[ -z $DEBUG ]] || set -x
 
-repo_path="$1" # user/repo_name
 tmp_dir=/tmp/gh_releases
 rm -rf $tmp_dir
 mkdir -p $tmp_dir
 touch $tmp_dir/releases
 
-fatal() { echo -e "\n[FATAL] $*" 1>&2; exit 1; }
-warning() { echo -e "[WARNING] $*" 1>&2; }
+fatal() { echo -e "\n[FATAL] $*" >&2; exit 1; }
+warning() { echo -e "[WARNING] $*" >&2; }
 
 usage() {
     cat >&2 <<EOF
 Usage: $(basename "$0") <user>/<repo>
+
+Args:
+
+    -h|--help   Show this help and exit.
 
 Env Vars:
     # used for github api
@@ -31,23 +34,40 @@ Note: GITHUB_USER_TOKEN environment variable is highly recommended as
       multipage results may be unreliable. GITHUB_USER is optional and not
       actually required for gh_releases to function.
 EOF
+    exit 1
 }
 
+repo_path=
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            usage;;
+        *)
+            if [[ -z "$repo_path" ]]; then
+                repo_path=$1
+            else
+                fatal "Only one <user>/<repo> can be provided"
+            fi;;
+    esac
+    shift
+done
+
 if [[ -z "$repo_path" ]]; then
-    usage
-    fatal "user/repo not provided!"
+    fatal "<user>/<repo> not provided"
+elif [[ "$repo_path" != *"/"* ]]; then
+    fatal "Remote repo must be in form <user>/<repo>"
 fi
 
 auth=()
 if [[ -n $GITHUB_USER_TOKEN ]]; then
     auth=(-H "Authorization: Bearer $GITHUB_USER_TOKEN")
     if [[ -n $GITHUB_USER ]]; then
-        echo "Using GitHub token for user: $GITHUB_USER"
+        echo "Using GitHub token for user: $GITHUB_USER" >&2
     else
-        warn "$GITHUB_USER is optional for gh_releases but may be used elsewhere"
+        warning "$GITHUB_USER is optional for gh_releases but may be used elsewhere"
     fi
 else
-    warning "GITHUB_USER_TOKEN not set! Results may be unreliable."
+    warning "GITHUB_USER_TOKEN not set. Results may be unreliable."
 fi
 
 if [[ -n "$NO_TAGS" ]]; then
@@ -57,18 +77,18 @@ if [[ -n "$NO_RELEASES" ]]; then
     warning "omitting releases (NO_RELEASES is set)"
 fi
 
-echo -n "Fetching releases from github for '$repo_path'... " 1>&2
+echo -n "Fetching releases from github for '$repo_path'... " >&2
 
 get_page() {
     url=$1
     key=$2
     page=$3
     tmp_file=$(mktemp $tmp_dir/XXXX.tmp)
-    http_code=$(curl "${auth[@]}" -b /tmp/cookies.txt -c /tmp/cookies.txt -s \
-        "${url}?page=${page}&per_page=100" > "$tmp_file")
+    http_code=$(curl -s -o "$tmp_file" -w "%{http_code}\n" "${auth[@]}" \
+        "${url}?page=${page}&per_page=100")
     if [[ $http_code != 2* ]]; then
         [[ -n $DEBUG ]] || rm -f "$tmp_file"
-        fatal "$repo_path: HTTP $http_code\n$(cat "$tmp_file")"
+        fatal "Downloading $repo_path returned: HTTP $http_code"
     fi
     grep -oP "\"$key\": \"\\K(.*)(?=\")" "$tmp_file"
     [[ -n $DEBUG ]] || rm -f "$tmp_file"
@@ -92,9 +112,13 @@ get_all_pages() {
     fi
 }
 
-[[ -z $NO_RELEASES ]] && get_all_pages "https://api.github.com/repos/${repo_path}/releases" "tag_name"
-[[ -z $NO_TAGS ]] && get_all_pages "https://api.github.com/repos/${repo_path}/tags" "name"
+if [[ -z $NO_RELEASES ]]; then
+    get_all_pages "https://api.github.com/repos/${repo_path}/releases" "tag_name"
+fi
+if [[ -z $NO_TAGS ]]; then
+    get_all_pages "https://api.github.com/repos/${repo_path}/tags" "name"
+fi
 
-echo "Done!" 1>&2
+echo "Done." >&2
 sort --version-sort --unique $tmp_dir/releases
 [[ -n $DEBUG ]] || rm -rf $tmp_dir
