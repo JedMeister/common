@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 # Copyright (c) 2008 Alon Swartz <alon@turnkeylinux.org> - all rights reserved
+# Copyright (c) 2009-2026 TurnKey GNU/Linux <admin@turnkeylinux.org>
 
-"""
-Configure MySQL (sets MySQL password and optionally executes query)
+"""Configure MySQL/MariaDB password and (optionally) execute query.
 
 Options:
     -u --user=    mysql username (default: adminer)
@@ -14,27 +14,29 @@ Options:
 
 """
 
-import re
-import sys
-import time
+# ruff: noqa: D101, D102, D103, D105, D107, PTH103, EM101, TRY003
 import getopt
-
+import os
+import shutil
 import signal
+import subprocess
+import sys
+from typing import NoReturn
 
-from libinithooks.dialog_wrapper import Dialog
-from os import system
 import pymysql
 import pymysql.cursors
+from libinithooks.dialog_wrapper import Dialog
 
-DEBIAN_CNF = "/etc/mysql/debian.cnf"
 
 class Error(Exception):
     pass
 
+
 class MySQL:
-    def __init__(self):
-        system("mkdir -p /var/run/mysqld")
-        system("chown mysql:root /var/run/mysqld")
+    def __init__(self) -> None:
+        # only required in chroot - otherwise created at boot
+        os.makedirs("/run/mysqld", exist_ok=True)
+        shutil.chown("/run/mysqld", user="mysql", group="mysql")
 
         self.selfstarted = False
         if not self._is_alive():
@@ -43,37 +45,53 @@ class MySQL:
 
         self.connect()
 
-    def connect(self):
+    def connect(self) -> None:
         self.connection = pymysql.connect(
-            unix_socket='/run/mysqld/mysqld.sock',
-            user='root',
-            cursorclass=pymysql.cursors.DictCursor)
+            unix_socket="/run/mysqld/mysqld.sock",
+            user="root",
+            cursorclass=pymysql.cursors.DictCursor,
+        )
         self.connected = True
 
-    def _is_alive(self):
-        return system('mysqladmin -s ping >/dev/null 2>&1') == 0
+    def _is_alive(self) -> bool:
+        return (
+            subprocess.run(
+                # don't use systemctl path - build time uses wrapper
+                ["systemctl", "is-active", "--quiet", "mariadb"],  # noqa: S607
+                check=False,
+            ).returncode
+            == 0
+        )
 
-    def _start(self):
-        system("mysqld --skip-networking >/dev/null 2>&1 &")
-        for i in range(6):
-            if self._is_alive():
-                return
+    def _start(self) -> None:
+        start_mysql = subprocess.run(
+            # don't use systemctl path - build time uses wrapper script
+            ["systemctl", "start", "mariadb"],  # noqa: S607
+            check=False,
+        )
+        if start_mysql.returncode != 0:
+            raise Error("Could not start mysqld")
 
-            time.sleep(1)
-
-        raise Error("could not start mysqld")
-
-    def _stop(self):
+    def _stop(self) -> None:
         if self.selfstarted:
-            system("mysqladmin --defaults-file=%s shutdown" % DEBIAN_CNF)
+            subprocess.run(
+                # don't use systemctl path - build time uses wrapper script
+                ["systemctl", "stop", "mariadb"],  # noqa: S607
+                check=True,
+            )
 
-    def __del__(self):
+    def __del__(self) -> None:
+        # do we still want/need this & ._stop() now we're using systemctl?
         self._stop()
 
-    def execute(self, query, interp=None, output=False):
+    def execute(
+        self,
+        query: str,
+        interp: tuple[str, str, str] | None = None,
+        output: bool = False,
+    ) -> tuple | None:
         if not self.connected:
             self.connect()
-
         try:
             with self.connection.cursor() as cursor:
                 cursor.execute(query, interp)
@@ -85,66 +103,67 @@ class MySQL:
             self.connected = False
         if output:
             return result
+        return None
 
 
-def usage(s=None):
+def usage(s: str | getopt.GetoptError | None = None) -> NoReturn:
     if s:
         print("Error:", s, file=sys.stderr)
-    print("Syntax: %s [options]" % sys.argv[0], file=sys.stderr)
+    print(f"Syntax: {sys.argv[0]} [options]", file=sys.stderr)
     print(__doc__, file=sys.stderr)
     sys.exit(1)
 
-def main():
+
+def main() -> None:
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], "hu:p:",
-                     ['help', 'user=', 'pass=', 'host=', 'query='])
+        opts, _args = getopt.gnu_getopt(
+            sys.argv[1:],
+            "hu:p:",
+            ["help", "user=", "pass=", "host=", "query="],
+        )
 
     except getopt.GetoptError as e:
         usage(e)
 
-    username="adminer"
-    password=""
-    hostname="localhost"
-    queries=[]
+    username = "adminer"
+    password = ""
+    hostname = "localhost"
+    queries = []
 
     for opt, val in opts:
-        if opt in ('-h', '--help'):
+        if opt in ("-h", "--help"):
             usage()
-        elif opt in ('-u', '--user'):
+        elif opt in ("-u", "--user"):
             username = val
-        elif opt in ('-p', '--pass'):
+        elif opt in ("-p", "--pass"):
             password = val
-        elif opt in ('-H', '--host'):
+        elif opt in ("-H", "--host"):
             hostname = val
-        elif opt in ('--query'):
+        elif opt in ("--query"):
             queries.append(val)
 
     if not password:
-        d = Dialog('TurnKey Linux - First boot configuration')
+        d = Dialog("TurnKey Linux - First boot configuration")
         password = d.get_password(
-            "MySQL Password",
-            "Please enter new password for the MySQL '%s' account." % username)
+            "MySQL/MariaDB Password",
+            f"Please enter new password for the MySQL/MariaDB '{username}'"
+            " account.",
+        )
 
     m = MySQL()
 
     # set password
-    #m.execute('update mysql.user set authentication_string=PASSWORD(%s) where User=%s',
-    #    (password, username))
-    m.execute('ALTER USER %s@%s IDENTIFIED BY %s', (username, hostname, password))
-    m.execute('FLUSH PRIVILEGES')
-
-    # edge case: update DEBIAN_CNF
-    if username == "debian-sys-maint":
-        with open(DEBIAN_CNF, 'r') as fob:
-            old = fob.read()
-        new = re.sub("password = (.*)\n", "password = %s\n" % password, old)
-        with open(DEBIAN_CNF, 'w') as fob:
-            fob.write(new)
+    m.execute(
+        # IMPORTANT: Always use % formating in SQL querries via pymysql
+        "ALTER USER %s@%s IDENTIFIED BY %s", (username, hostname, password),
+    )
+    m.execute("FLUSH PRIVILEGES")
 
     # execute any adhoc specified queries
     for query in queries:
         m.execute(query)
+
 
 if __name__ == "__main__":
     main()
