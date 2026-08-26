@@ -17,7 +17,7 @@ Changelog snippet files should be named::
 
 Where:
     FAB_PATH            path to 'fab' directory; defaults to '/turnkey/fab/'
-    COMMON              '$FAB_PATH/common/' 
+    COMMON              '$FAB_PATH/common/'
     COMMON_MAKFILE      Name of common makefile in 'COMMON/mk/turnkey/'; e.g.
                         'apache' refers to 'COMMON/mk/turnkey/apache.mk'
     COMMON_CHANGELOG    Matching changelog file; e.g.:
