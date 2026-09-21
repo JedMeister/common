@@ -3,6 +3,17 @@
 # it should be enabled by default but doesn't appear to be?
 systemctl enable networking.service
 
+if ! grep -s '^timeout' /etc/dhcpcd.conf; then
+    cat >> /etc/dhcpcd.conf <<EOF
+# 2 second DHCP timeout (default is 30) - ifup doesn't appear to hang when
+# no DHCPv6 server is available.
+#
+# 2 seconds should be plenty for wired interface; more (5-6?) might be needed
+# with wireless.
+timeout 2
+EOF
+fi
+
 if ! grep -s '^noarp' /etc/dhcpcd.conf; then
     cat >> /etc/dhcpcd.conf <<EOF
 
